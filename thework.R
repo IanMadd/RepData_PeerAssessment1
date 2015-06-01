@@ -33,6 +33,11 @@ median(as.numeric(StepsPerDaySum$Steps), na.rm=TRUE)
 
 
 
+
+sum((StepsPerDaySum$Steps>=10215) & (StepsPerDaySum$Steps<=11315), na.rm=T)
+
+sum((StepsPerDaySum$calculatedSteps>=10215) & (StepsPerDaySum$calculatedSteps<=11315), na.rm=T)
+
 ###
 #Plotting
 ###
