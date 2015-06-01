@@ -3,7 +3,7 @@ library(data.table) #need this
 library(knitr) # need this
 library(lubridate) # need this
 library(ggplot2) # need this
-library(plyr)
+library(dplyr) # need this
 
 # read the dataset, 3 variables, steps, date, and interval
 dataset <- data.table(read.csv("activity.csv"))
@@ -44,8 +44,7 @@ main="Histogram Showing Frequency of Total Steps Taken", col="lightblue")
 
 
 p <- ggplot(StepsPerDaySum, aes(x = Steps))
-p + geom_histogram(binwidth=1100, aes(fill = ..count..)) +
-  scale_fill_gradient("Count", low = "magenta", high = "blue")
+p + geom_histogram(binwidth=1100)
 
 
 
@@ -110,13 +109,11 @@ table(is.na(dataset$steps))
 # or if the steps == NA the newsteps value is the mean of steps for that interval 
 for (i in 1:length(dataset$steps)){
   if (is.na(dataset$steps[i])) {
-    dataset$newsteps[i] <- StepsPerIntervalMean$Steps[StepsPerIntervalMean$Interval == dataset$interval[i]] 
+    dataset$calculatedSteps[i] <- StepsPerIntervalMean$Steps[StepsPerIntervalMean$Interval == dataset$interval[i]] 
   }else{
-    dataset$newsteps[i] <- dataset$steps[i]
+    dataset$calculatedSteps[i] <- dataset$steps[i]
   }
 }
-
-
 
 
 
@@ -126,7 +123,18 @@ for (i in 1:length(dataset$steps)){
   #differ from the estimates from the first part of the assignment? What is the impact of 
   #imputing missing data on the estimates of the total daily number of steps?
 
+StepsPerDaySum$calculatedSteps <- tapply(dataset$calculatedSteps, dataset$date, sum)
 
+
+hist(StepsPerDaySum$calculatedSteps, breaks=20, xlab="Number of Steps Taken", 
+     main="Frequency of Total Steps Taken",ylab = "Number of Days", col="lightblue")
+
+
+p <- ggplot(StepsPerDaySum, aes(x = calculatedSteps))
+p + geom_histogram(binwidth=1100) + labs(title = "Frequency of Total Steps Taken", x= "Number of Steps Taken", y="Number of Days")
+ 
+mean(StepsPerDaySum$calculatedSteps)
+median(StepsPerDaySum$calculatedSteps)
 
 
 #Are there differences in activity patterns between weekdays and week- ends?
@@ -136,22 +144,91 @@ for (i in 1:length(dataset$steps)){
 #1. Create a new factor variable in the dataset with two levels – “weekday” and 
   #“weekend” indicating whether a given date is a weekday or weekend day.
 
+#creats a variable called "weekend" indicated whether the day is a weekend or not. (TRUE, FALSE)
+for (i in 1: length(dataset$DateTime)){dataset$weekend[i] <- wday(dataset$DateTime[i]) %in% c(1,7)}
+
+# Two new datasets one for the weekday and one for the weekend.
+WeekendDataset <- filter(dataset, weekend == TRUE)
+WeekdayDataset <- filter(dataset, weekend == FALSE)
+
+
 #2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute 
   #interval (x-axis) and the average number of steps taken, averaged across all 
   #weekday days or weekend days (y-axis). The plot should look something like the 
   #following, which was creating using simulated data:
 
-#Your plot will look different from the one above because you will be using the 
-#activity monitor data. Note that the above plot was made using the lattice system 
-#but you can make the same version of the plot using any plotting system you choose.
+
+# Mean steps per interval Weekday
+
+StepsPerIntervalMean$WeekdayCalculatedSteps <-tapply(WeekdayDataset$calculatedSteps, WeekdayDataset$Time, mean)
+
+# Mean steps per interval Weekend
+
+StepsPerIntervalMean$WeekendCalculatedSteps <-tapply(WeekendDataset$calculatedSteps, WeekendDataset$Time, mean)
 
 
 
 
 
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
 
 
 
+### Weekday Plot
+p1 <- ggplot(StepsPerIntervalMean, aes(x=HourDecimalMin, y=WeekdayCalculatedSteps, group=1))
+p1 <- p1 + geom_line() + scale_x_continuous(breaks=0:24) + labs(x = "Hours", y = "Mean Steps", title= "Mean Steps in 5 Minute Intervals During Weekdays From Midnight To Midnight.")
+
+#### Weekend Plot
+
+p2 <- ggplot(StepsPerIntervalMean, aes(x=HourDecimalMin, y=WeekendCalculatedSteps, group=1))
+p2 <- p2 + geom_line() + scale_x_continuous(breaks=0:24) + labs(x = "Hours", y = "Mean Steps", title= "Mean Steps in 5 Minute Intervals During Weekends From Midnight To Midnight.")
+
+#### Use multiplot to make 2 panels 
+multiplot(p1, p2, cols=1)
 
 
 
