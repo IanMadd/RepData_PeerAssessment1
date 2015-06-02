@@ -70,12 +70,17 @@ head(StepsPerDaySum)
 
 <br>
 
-**Mean and Median Steps / Day**
+**Mean and Median Steps of All Days**
 ```{r}
 mean(as.numeric(StepsPerDaySum$Steps), na.rm=TRUE)
 ```
 ```{r}
 median(as.numeric(StepsPerDaySum$Steps), na.rm=TRUE)
+```
+
+**
+```{r}
+
 ```
 
 <br>
@@ -130,7 +135,7 @@ table(is.na(dataset$steps))
 ```
 <br>
 
-This creates a new variable "calculatedSteps" which is equal to the original number of steps if that number is available, or if that value is NA, the calculatedSteps value is the mean of all steps for that interval.  
+This step creates a new variable "calculatedSteps" which is equal to the original number of steps if that number is available or, if that value is NA, the calculatedSteps value is the mean of all steps for that interval.  
 ```{r cache=TRUE}
 for (i in 1:length(dataset$steps)){
   if (is.na(dataset$steps[i])) {
@@ -297,6 +302,9 @@ mean(WeekendDataset$calculatedSteps)
 
 <br>
 <br>
+
+
+
 
 
 
